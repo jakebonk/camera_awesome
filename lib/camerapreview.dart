@@ -70,8 +70,6 @@ class CameraAwesome extends StatefulWidget {
   /// choose your photo size from the [selectDefaultSize] method
   final ValueNotifier<Size> photoSize;
 
-  final ValueNotifier<DeviceOrientation> orientation;
-
   /// set brightness correction manually range [0,1] (optionnal)
   final ValueNotifier<double>? brightness;
 
