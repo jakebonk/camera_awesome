@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:camerawesome/models/orientations.dart';
 import 'package:camerawesome_example/widgets/bottom_bar.dart';
