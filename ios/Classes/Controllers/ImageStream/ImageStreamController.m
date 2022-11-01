@@ -20,41 +20,34 @@
 - (void)captureOutput:(AVCaptureOutput *)output didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
   CVPixelBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
   CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
-  
-  const Boolean isPlanar = CVPixelBufferIsPlanar(pixelBuffer);
-  size_t planeCount;
-  if (isPlanar) {
-    planeCount = CVPixelBufferGetPlaneCount(pixelBuffer);
-  } else {
-    planeCount = 1;
-  }
-  
-  FlutterStandardTypedData *data;
-  for (int i = 0; i < planeCount; i++) {
-    void *planeAddress;
-    size_t bytesPerRow;
-    size_t height;
-    size_t width;
-    
-    if (isPlanar) {
-      planeAddress = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, i);
-      bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, i);
-      height = CVPixelBufferGetHeightOfPlane(pixelBuffer, i);
-      width = CVPixelBufferGetWidthOfPlane(pixelBuffer, i);
-    } else {
-      planeAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
-      bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer);
-      height = CVPixelBufferGetHeight(pixelBuffer);
-      width = CVPixelBufferGetWidth(pixelBuffer);
-    }
-    
-    NSNumber *length = @(bytesPerRow * height);
-    NSData *bytes = [NSData dataWithBytes:planeAddress length:length.unsignedIntegerValue];
-    data = [FlutterStandardTypedData typedDataWithBytes:bytes];
-  }
-  
+  int w = CVPixelBufferGetWidth(pixelBuffer);
+      int h = CVPixelBufferGetHeight(pixelBuffer);
+      int r = CVPixelBufferGetBytesPerRow(pixelBuffer);
+      int bytesPerPixel = r/w;
+
+      unsigned char *buffer = CVPixelBufferGetBaseAddress(pixelBuffer);
+
+      UIGraphicsBeginImageContext(CGSizeMake(w, h));
+
+      CGContextRef c = UIGraphicsGetCurrentContext();
+
+      unsigned char* data = CGBitmapContextGetData(c);
+      if (data != NULL) {
+         int maxY = h;
+         for(int y = 0; y<maxY; y++) {
+            for(int x = 0; x<w; x++) {
+               int offset = bytesPerPixel*((w*y)+x);
+               data[offset] = buffer[offset];     // R
+               data[offset+1] = buffer[offset+1]; // G
+               data[offset+2] = buffer[offset+2]; // B
+               data[offset+3] = buffer[offset+3]; // A
+            }
+         }
+      }
+      UIImage *img = UIGraphicsGetImageFromCurrentImageContext();
+      NSData *res = UIImageJPEGRepresentation(img,1.0);
   // Only send bytes for now
-  _imageStreamEventSink(data);
+  _imageStreamEventSink(res);
   
   CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
 }
